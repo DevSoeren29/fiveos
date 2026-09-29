@@ -92,8 +92,11 @@ fi
 
 # --- FiveM -------------------------------------------------------------------
 info "Setting up the FiveM server"
-id -u "$FIVEM_USER" > /dev/null 2>&1 ||
+if ! id -u "$FIVEM_USER" > /dev/null 2>&1; then
 	useradd --system --user-group --home-dir "$FIVEM_HOME" --shell /usr/sbin/nologin "$FIVEM_USER"
+elif [ "$(id -u "$FIVEM_USER")" -ge 1000 ]; then
+	warn "'$FIVEM_USER' is a login account; FXServer will run as that user."
+fi
 install -d -o "$FIVEM_USER" -g "$FIVEM_USER" -m 2775 "$FIVEM_HOME" "$DATA_DIR" "$LOG_DIR"
 
 # the user created in the installer may edit the server files (e.g. via SFTP)

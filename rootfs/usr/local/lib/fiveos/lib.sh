@@ -4,7 +4,8 @@
 
 FIVEOS_VERSION="0.1.0"
 
-FIVEM_USER="fivem"
+# system account that runs FXServer (not "fivem": that is a likely login name)
+FIVEM_USER="fxserver"
 FIVEM_HOME="/opt/fivem"
 ART_DIR="$FIVEM_HOME/artifacts"
 DATA_DIR="$FIVEM_HOME/server-data"

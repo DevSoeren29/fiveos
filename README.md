@@ -81,7 +81,8 @@ sudo fiveos setup                 # retry the setup if the first boot failed
 | `/var/backups/fiveos` | backups |
 | `/var/log/fiveos-setup.log` | first boot log |
 
-Your Linux user is in the `fivem` group and can edit the server files directly
+FXServer runs as the system account `fxserver`. Your Linux user is in the
+`fxserver` group and can edit the server files directly
 (e.g. via SFTP).
 
 ## Building the ISO

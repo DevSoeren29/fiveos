@@ -6,8 +6,8 @@ Wants=network-online.target mariadb.service
 [Service]
 # FXServer runs inside tmux so 'fiveos console' can attach to its console.
 Type=forking
-User=fivem
-Group=fivem
+User=fxserver
+Group=fxserver
 UMask=0002
 WorkingDirectory=/opt/fivem/server-data
 ExecStart=/usr/bin/tmux -L fivem new-session -d -s fivem -x 200 -y 50 /bin/bash /opt/fivem/artifacts/run.sh +exec server.cfg
