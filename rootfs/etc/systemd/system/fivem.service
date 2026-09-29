@@ -1,0 +1,21 @@
+[Unit]
+Description=FiveM server (FXServer), managed by FiveOS
+After=network-online.target mariadb.service
+Wants=network-online.target mariadb.service
+
+[Service]
+# FXServer runs inside tmux so 'fiveos console' can attach to its console.
+Type=forking
+User=fivem
+Group=fivem
+UMask=0002
+WorkingDirectory=/opt/fivem/server-data
+ExecStart=/usr/bin/tmux -L fivem new-session -d -s fivem -x 200 -y 50 /bin/bash /opt/fivem/artifacts/run.sh +exec server.cfg
+ExecStartPost=-/usr/bin/tmux -L fivem pipe-pane -t fivem -o "cat >> /opt/fivem/logs/fxserver.log"
+ExecStop=/usr/local/lib/fiveos/fx-stop.sh
+Restart=always
+RestartSec=10
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target

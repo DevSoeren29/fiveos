@@ -1,0 +1,17 @@
+[Unit]
+Description=FiveOS first boot setup
+After=network-online.target mariadb.service
+Wants=network-online.target
+Before=getty@tty1.service
+ConditionPathIsDirectory=/etc/fiveos/install
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/fiveos/firstboot.sh
+RemainAfterExit=yes
+TimeoutStartSec=30min
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

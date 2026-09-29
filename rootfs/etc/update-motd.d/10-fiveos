@@ -1,0 +1,13 @@
+#!/bin/sh
+cat <<'EOF'
+  _____ _            ___  ____
+ |  ___(_)_   _____ / _ \/ ___|
+ | |_  | \ \ / / _ \ | | \___ \
+ |  _| | |\ V /  __/ |_| |___) |
+ |_|   |_| \_/ \___|\___/|____/
+
+EOF
+/usr/local/bin/fiveos status 2>/dev/null || true
+echo
+echo " Type 'fiveos help' to see all commands."
+echo

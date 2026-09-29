@@ -1,0 +1,224 @@
+#!/bin/bash
+# FiveOS first boot setup. Configures MariaDB, phpMyAdmin, FXServer and the
+# firewall with the answers from the installer (or from 'fiveos setup'),
+# stored in /etc/fiveos/install. Safe to run again after a failure.
+set -euo pipefail
+# shellcheck source=lib.sh
+. /usr/local/lib/fiveos/lib.sh
+
+[ "$(id -u)" -eq 0 ] || die "The setup must run as root."
+[ -d "$INSTALL_DIR" ] || die "No setup data found. Run: sudo fiveos setup"
+
+exec > >(tee -a /var/log/fiveos-setup.log) 2>&1
+
+val() { cat "$INSTALL_DIR/$1" 2>/dev/null || true; }
+SERVER_NAME=$(val server_name)
+LICENSE_KEY=$(val license_key)
+DB_ADMIN_USER=$(val db_admin_user)
+DB_ADMIN_PASS=$(val db_admin_password)
+DB_NAME=$(val db_name)
+DB_USER=$(val db_user)
+DB_PASS=$(val db_password)
+
+for v in SERVER_NAME DB_ADMIN_USER DB_ADMIN_PASS DB_NAME DB_USER DB_PASS; do
+	[ -n "${!v}" ] || die "Setup value $v is missing. Run: sudo fiveos setup"
+done
+for v in DB_ADMIN_USER DB_NAME DB_USER; do
+	valid_name "${!v}" || die "Invalid $v '${!v}'. Run: sudo fiveos setup"
+done
+[[ $LICENSE_KEY =~ ^[A-Za-z0-9_]*$ ]] || die "Invalid license key."
+
+echo
+info "FiveOS $FIVEOS_VERSION first boot setup (log: /var/log/fiveos-setup.log)"
+
+info "Waiting for the internet connection"
+for i in $(seq 1 60); do
+	curl -fsS -o /dev/null --max-time 5 "$ARTIFACT_API" && break
+	[ "$i" -eq 60 ] && die "No internet connection. Check the network and run: sudo fiveos setup"
+	sleep 2
+done
+
+# --- MariaDB ---------------------------------------------------------------
+info "Configuring MariaDB"
+systemctl enable --now mariadb
+mariadb <<SQL
+DROP USER IF EXISTS ''@'localhost';
+DROP DATABASE IF EXISTS test;
+CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE OR REPLACE USER '$DB_USER'@'localhost' IDENTIFIED BY '$(sql_esc "$DB_PASS")';
+GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
+CREATE OR REPLACE USER '$DB_ADMIN_USER'@'localhost' IDENTIFIED BY '$(sql_esc "$DB_ADMIN_PASS")';
+GRANT ALL PRIVILEGES ON *.* TO '$DB_ADMIN_USER'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+SQL
+
+# --- phpMyAdmin --------------------------------------------------------------
+if [ -d /usr/share/phpmyadmin ]; then
+	info "Configuring phpMyAdmin"
+	PMA_PASS=$(random_pw)
+	mariadb <<SQL
+CREATE DATABASE IF NOT EXISTS phpmyadmin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE OR REPLACE USER 'phpmyadmin'@'localhost' IDENTIFIED BY '$PMA_PASS';
+GRANT ALL PRIVILEGES ON phpmyadmin.* TO 'phpmyadmin'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+	pma_sql=/usr/share/phpmyadmin/sql/create_tables.sql
+	if [ -f "$pma_sql" ]; then
+		mariadb phpmyadmin < "$pma_sql"
+	elif [ -f "$pma_sql.gz" ]; then
+		zcat "$pma_sql.gz" | mariadb phpmyadmin
+	else
+		warn "phpMyAdmin configuration storage tables not found, skipping."
+	fi
+	# read by Debian's /etc/phpmyadmin/config.inc.php (control user + pmadb)
+	cat > /etc/phpmyadmin/config-db.php <<PHP
+<?php
+// Written by FiveOS: phpMyAdmin configuration storage.
+\$dbuser = 'phpmyadmin';
+\$dbpass = '$PMA_PASS';
+\$basepath = '';
+\$dbname = 'phpmyadmin';
+\$dbserver = 'localhost';
+\$dbport = '3306';
+\$dbtype = 'mysql';
+PHP
+	chown root:www-data /etc/phpmyadmin/config-db.php
+	chmod 640 /etc/phpmyadmin/config-db.php
+	systemctl enable apache2
+	systemctl restart apache2
+else
+	warn "phpMyAdmin is not installed, skipping."
+fi
+
+# --- FiveM -------------------------------------------------------------------
+info "Setting up the FiveM server"
+id -u "$FIVEM_USER" > /dev/null 2>&1 ||
+	useradd --system --user-group --home-dir "$FIVEM_HOME" --shell /usr/sbin/nologin "$FIVEM_USER"
+install -d -o "$FIVEM_USER" -g "$FIVEM_USER" -m 2775 "$FIVEM_HOME" "$DATA_DIR" "$LOG_DIR"
+
+# the user created in the installer may edit the server files (e.g. via SFTP)
+admin_login=$(getent passwd 1000 | cut -d: -f1 || true)
+if [ -n "$admin_login" ]; then
+	usermod -aG "$FIVEM_USER" "$admin_login"
+fi
+
+[ -x "$ART_DIR/run.sh" ] || install_artifacts recommended
+
+if [ ! -d "$DATA_DIR/resources" ]; then
+	info "Downloading the default resources (cfx-server-data)"
+	tmp=$(mktemp -d "$FIVEM_HOME/.cfx.XXXXXX")
+	git clone --quiet --depth 1 "$CFX_DATA_REPO" "$tmp/repo"
+	cp -R "$tmp/repo/resources" "$DATA_DIR/resources"
+	rm -rf "$tmp"
+fi
+mkdir -p "$RES_DIR"
+
+if [ ! -d "$RES_DIR/oxmysql" ]; then
+	info "Downloading oxmysql"
+	tmp=$(mktemp -d "$FIVEM_HOME/.ox.XXXXXX")
+	if curl -fsSL --retry 3 -o "$tmp/oxmysql.zip" "$OXMYSQL_URL" && unzip -q "$tmp/oxmysql.zip" -d "$tmp/ox"; then
+		src=$tmp/ox
+		[ -d "$tmp/ox/oxmysql" ] && src=$tmp/ox/oxmysql
+		mv "$src" "$RES_DIR/oxmysql"
+	else
+		warn "oxmysql could not be downloaded. Add it later with 'fiveos resource add'."
+	fi
+	rm -rf "$tmp"
+fi
+
+if [ ! -f "$SERVER_CFG" ]; then
+	name=$(cfg_str "$SERVER_NAME")
+	ox_line="# ensure oxmysql"
+	[ -d "$RES_DIR/oxmysql" ] && ox_line="ensure oxmysql"
+	cat > "$SERVER_CFG" <<CFG
+# FiveM server configuration, generated by FiveOS.
+# License key and database password are kept in secrets.cfg.
+# Docs: https://docs.fivem.net/docs/server-manual/setting-up-a-server-vanilla/
+
+endpoint_add_tcp "0.0.0.0:30120"
+endpoint_add_udp "0.0.0.0:30120"
+
+exec secrets.cfg
+
+# Default resources
+ensure mapmanager
+ensure chat
+ensure spawnmanager
+ensure sessionmanager
+ensure basic-gamemode
+ensure hardcap
+ensure rconlog
+
+# Database
+$ox_line
+
+sv_scriptHookAllowed 0
+set onesync on
+sv_maxclients 48
+sv_endpointprivacy true
+
+sv_hostname "$name"
+sets sv_projectName "$name"
+sets sv_projectDesc "Powered by FiveOS"
+sets tags "default, fiveos"
+sets locale "en-US"
+
+# Permissions
+add_ace group.admin command allow
+add_ace group.admin command.quit deny
+# add_principal identifier.fivem:YOUR_ID group.admin
+
+# Resources added with 'fiveos resource add'
+CFG
+fi
+
+cat > "$SECRETS_CFG" <<CFG
+# Secrets, loaded by server.cfg. Do not share this file.
+sv_licenseKey "$LICENSE_KEY"
+set mysql_connection_string "mysql://$DB_USER:$(uri_enc "$DB_PASS")@localhost/$DB_NAME?charset=utf8mb4"
+CFG
+
+chown -R "$FIVEM_USER:$FIVEM_USER" "$DATA_DIR"
+chmod -R g+w "$DATA_DIR"
+chmod 640 "$SECRETS_CFG"
+
+systemctl daemon-reload
+systemctl enable fivem
+
+# --- Firewall ----------------------------------------------------------------
+info "Configuring the firewall"
+ufw --force reset > /dev/null
+ufw default deny incoming > /dev/null
+ufw default allow outgoing > /dev/null
+ufw allow 22/tcp comment 'SSH' > /dev/null
+ufw allow 80/tcp comment 'phpMyAdmin' > /dev/null
+ufw allow 30120/tcp comment 'FiveM' > /dev/null
+ufw allow 30120/udp comment 'FiveM' > /dev/null
+ufw --force enable > /dev/null
+
+# --- Done ----------------------------------------------------------------------
+conf_set DB_NAME "$DB_NAME"
+conf_set DB_USER "$DB_USER"
+conf_set DB_ADMIN_USER "$DB_ADMIN_USER"
+conf_set INSTALLED "1"
+
+find "$INSTALL_DIR" -type f -exec shred -u {} +
+rmdir "$INSTALL_DIR"
+systemctl disable fiveos-firstboot.service > /dev/null 2>&1 || true
+
+if [ -n "$LICENSE_KEY" ]; then
+	info "Starting the FiveM server"
+	systemctl start fivem
+else
+	warn "No license key set. Add it with: sudo fiveos config license <key> && sudo fiveos start"
+fi
+
+ip=$(primary_ip)
+cat <<EOF
+
+${C_G}${C_B}FiveOS is ready.${C_0}
+  FiveM (F8 console):  connect ${ip:-<ip>}:30120
+  phpMyAdmin:          http://${ip:-<ip>}/phpmyadmin  (user: $DB_ADMIN_USER)
+  Manage the server:   fiveos help
+
+EOF

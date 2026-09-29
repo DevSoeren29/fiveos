@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FiveOS</title>
+<meta name="description" content="FiveOS is a minimal Linux distribution for FiveM servers. Install from ISO, answer a few questions and get FXServer, MariaDB and phpMyAdmin preconfigured.">
+<meta property="og:title" content="FiveOS - the Linux distribution for FiveM servers">
+<meta property="og:description" content="Boot the ISO, answer a few questions, run your FiveM server.">
+<meta property="og:image" content="assets/logo.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+	<symbol id="i-download" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
+	<symbol id="i-tag" viewBox="0 0 24 24"><path fill="currentColor" d="M3 4v6.6c0 .5.2 1 .6 1.4l8.4 8.4a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8L13 2.6A2 2 0 0 0 11.6 2H5a2 2 0 0 0-2 2zm4.5 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></symbol>
+	<symbol id="i-copy" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M9 9h11v11H9zM5 15H4V4h11v1"/></symbol>
+	<symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+	<symbol id="i-code" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></symbol>
+	<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 7v5l3 2"/></symbol>
+</svg>
+
+<header class="topbar">
+	<div class="wrap topbar-inner">
+		<nav class="menu" aria-label="Main">
+			<a class="menu-logo" href="#overview" data-tab-link="overview"><img src="assets/mark-dark.png" alt="" width="28" height="28"><span>Five<b>OS</b></span></a>
+			<a class="menu-item active" href="#overview" data-tab-link="overview">Home</a>
+			<a class="menu-item" href="#installation" data-tab-link="installation">Installation</a>
+			<a class="menu-item" href="#commands" data-tab-link="commands">Commands</a>
+			<a class="menu-item" href="#faq" data-tab-link="faq">FAQ</a>
+			<a class="menu-item repo-link" href="#" hidden>GitHub</a>
+		</nav>
+		<a class="menu-right menu-download download-link" href="#installation" data-tab-link="installation">
+			<svg class="icon"><use href="#i-download"/></svg><span>Download <span class="release-version">v0.1.0</span></span>
+		</a>
+	</div>
+</header>
+
+<div class="breadcrumbs">
+	<div class="wrap">
+		<a href="#overview" data-tab-link="overview">FiveOS</a><span class="sep">/</span><span id="crumb-current">Home</span>
+	</div>
+</div>
+
+<div class="wrap layout">
+	<main class="content">
+
+		<div class="hero">
+			<img class="hero-logo logo-light" src="assets/logo.png" alt="FiveOS" width="120" height="140">
+			<img class="hero-logo logo-dark" src="assets/logo-dark.png" alt="FiveOS" width="120" height="140">
+			<div class="hero-text">
+				<h1>The Linux distribution for FiveM servers</h1>
+				<p>Boot the ISO, answer a few questions, and get a ready-to-use FiveM server with FXServer, MariaDB and phpMyAdmin &mdash; preconfigured, secured and managed with one command.</p>
+				<div class="hero-actions">
+					<a class="button primary download-link" href="#installation" data-tab-link="installation"><svg class="icon"><use href="#i-download"/></svg><span class="download-label">Download ISO</span></a>
+					<a class="button repo-link" href="#" hidden><svg class="icon"><use href="#i-code"/></svg>Source code</a>
+				</div>
+				<p class="hero-meta muted small"><span class="release-version">v0.1.0</span> &middot; Debian 13 based &middot; amd64 &middot; free &amp; open source (MIT)</p>
+			</div>
+		</div>
+
+		<div class="tabs" role="tablist">
+			<button class="tab active" type="button" role="tab" data-tab="overview">Features</button>
+			<button class="tab" type="button" role="tab" data-tab="installation">Installation</button>
+			<button class="tab" type="button" role="tab" data-tab="commands">Commands</button>
+			<button class="tab" type="button" role="tab" data-tab="faq">FAQ</button>
+		</div>
+
+		<!-- Features -->
+		<section class="panel active" id="tab-overview" role="tabpanel" data-title="Home">
+			<div class="container">
+				<div class="entries">
+					<article class="entry">
+						<div class="entry-body">
+							<div class="entry-category">Installer</div>
+							<h2 class="entry-title">Only names and passwords</h2>
+							<p class="entry-text">The installer asks for the server name, your license key and the database users. Everything else is installed and configured automatically.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>ISO</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Unattended</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Preseed</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Installer</small></div></div>
+							<span class="meta"><svg class="icon"><use href="#i-clock"/></svg>Setup: ~15 min.</span>
+						</div>
+					</article>
+
+					<article class="entry">
+						<div class="entry-body">
+							<div class="entry-category">FiveM</div>
+							<h2 class="entry-title">FXServer ready to go</h2>
+							<p class="entry-text">The current recommended FXServer build is downloaded on first boot, with the default resources and oxmysql. It runs as a system service and restarts on crashes.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>FXServer</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>OneSync</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>oxmysql</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Game server</small></div></div>
+							<span class="meta">Port 30120</span>
+						</div>
+					</article>
+
+					<article class="entry">
+						<div class="entry-body">
+							<div class="entry-category">Database</div>
+							<h2 class="entry-title">MariaDB &amp; phpMyAdmin</h2>
+							<p class="entry-text">Database, users and the <code>mysql_connection_string</code> are created for you. phpMyAdmin is ready in the browser, including its configuration storage.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>MariaDB</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>phpMyAdmin</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>ESX / QBCore</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Database</small></div></div>
+							<span class="meta">/phpmyadmin</span>
+						</div>
+					</article>
+
+					<a class="entry" href="#commands" data-tab-link="commands">
+						<div class="entry-body">
+							<div class="entry-category">Management</div>
+							<h2 class="entry-title">One command for everything</h2>
+							<p class="entry-text">Start, stop, live console, logs, FXServer updates with rollback, resources from Git, backups and firewall &mdash; all through <code>fiveos</code>.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>CLI</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Updates</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Backups</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Command line</small></div></div>
+							<span class="meta link">All commands <svg class="icon"><use href="#i-arrow"/></svg></span>
+						</div>
+					</a>
+
+					<article class="entry">
+						<div class="entry-body">
+							<div class="entry-category">Security</div>
+							<h2 class="entry-title">Secure by default</h2>
+							<p class="entry-text">Firewall with only SSH, web and FiveM open, no root login, the database only reachable locally, and passwords deleted after the setup.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>ufw</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>sudo</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Local DB</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>System</small></div></div>
+							<span class="meta">Ports 22, 80, 30120</span>
+						</div>
+					</article>
+
+					<article class="entry">
+						<div class="entry-body">
+							<div class="entry-category">System</div>
+							<h2 class="entry-title">Minimal Debian base</h2>
+							<p class="entry-text">Built on Debian 13 &ldquo;trixie&rdquo; without desktop or extras &mdash; only what a FiveM server needs. Security updates come straight from Debian.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Debian 13</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>amd64</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>CLI only</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Base system</small></div></div>
+							<span class="meta">MIT license</span>
+						</div>
+					</article>
+				</div>
+			</div>
+		</section>
+
+		<!-- Installation -->
+		<section class="panel" id="tab-installation" role="tabpanel" data-title="Installation">
+			<div class="container">
+				<ol class="steps">
+					<li>
+						<span class="step-num">1</span>
+						<div>
+							<h3>Download the ISO</h3>
+							<p>Get the latest <b>fiveos-<span class="release-version-plain">0.1.0</span>-amd64.iso</b>. Optionally verify it with the SHA-256 checksum.</p>
+							<p><a class="button primary download-link" href="#"><svg class="icon"><use href="#i-download"/></svg><span class="download-label">Download ISO</span></a> <a class="button small checksum-link" href="#" hidden>SHA-256</a></p>
+						</div>
+					</li>
+					<li>
+						<span class="step-num">2</span>
+						<div>
+							<h3>Create a VM or a USB stick</h3>
+							<p><b>VirtualBox:</b> type <i>Linux / Debian (64-bit)</i>, 2+ CPUs, 4 GB RAM, 30 GB disk, network <b>Bridged Adapter</b>, and turn off <i>Unattended installation</i>.</p>
+							<p><b>Real server / PC:</b> write the ISO to a USB stick with <a href="https://rufus.ie" rel="noopener">Rufus</a> or <a href="https://etcher.balena.io" rel="noopener">balenaEtcher</a> and boot from it.</p>
+						</div>
+					</li>
+					<li>
+						<span class="step-num">3</span>
+						<div>
+							<h3>Answer the questions</h3>
+							<p>Choose <i>Install</i> and fill in:</p>
+							<div class="tags"><span class="tag">Server name</span><span class="tag">License key</span><span class="tag">DB admin + password</span><span class="tag">FiveM database</span><span class="tag">DB user + password</span><span class="tag">Linux user</span><span class="tag">Disk</span></div>
+							<p class="muted small">Get a license key at <a href="https://portal.cfx.re" rel="noopener">portal.cfx.re</a> &mdash; you can also add it later. The chosen disk is erased after you confirm.</p>
+						</div>
+					</li>
+					<li>
+						<span class="step-num">4</span>
+						<div>
+							<h3>First boot</h3>
+							<p>After the reboot FiveOS downloads FXServer and sets up the database, phpMyAdmin and the firewall. This needs internet and takes a few minutes. The login screen then shows the IP address.</p>
+						</div>
+					</li>
+					<li>
+						<span class="step-num">5</span>
+						<div>
+							<h3>Play</h3>
+							<p>In FiveM press <kbd>F8</kbd> and type <code>connect &lt;server-ip&gt;:30120</code>. On the server, <code>fiveos status</code> shows everything at a glance.</p>
+						</div>
+					</li>
+				</ol>
+			</div>
+		</section>
+
+		<!-- Commands -->
+		<section class="panel" id="tab-commands" role="tabpanel" data-title="Commands">
+			<div class="container">
+				<div class="container-toolbar">
+					<span class="muted small">Everything is managed with the <code>fiveos</code> command. Commands that change the system need <code>sudo</code>.</span>
+				</div>
+				<h3 class="list-heading">Server</h3>
+				<ul class="cmd-list">
+					<li><code>fiveos status</code><span class="desc">State, IP, build and connect address</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos start</code><span class="desc">Start / stop / restart the server</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos console</code><span class="desc">Live server console (leave: Ctrl+B, D)</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>fiveos logs -f</code><span class="desc">Follow the server log</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos update latest</code><span class="desc">Install another FXServer build</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos rollback</code><span class="desc">Back to the previous build</span><button class="button small copy-btn" type="button">Copy</button></li>
+				</ul>
+				<h3 class="list-heading">Configuration</h3>
+				<ul class="cmd-list">
+					<li><code>sudo fiveos config license &lt;key&gt;</code><span class="desc">Set the Cfx.re license key</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos config hostname "My Server"</code><span class="desc">Set the server name</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos config maxclients 64</code><span class="desc">Set the player slots</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos resource add &lt;git-url&gt;</code><span class="desc">Install a resource from Git or a .zip</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>fiveos resource list</code><span class="desc">List resources</span><button class="button small copy-btn" type="button">Copy</button></li>
+				</ul>
+				<h3 class="list-heading">Database &amp; system</h3>
+				<ul class="cmd-list">
+					<li><code>fiveos db info</code><span class="desc">Database, users, connection</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos backup</code><span class="desc">Back up server files and database</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos firewall allow 40120/tcp</code><span class="desc">Open a port</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos setup</code><span class="desc">Retry the setup if the first boot failed</span><button class="button small copy-btn" type="button">Copy</button></li>
+				</ul>
+			</div>
+		</section>
+
+		<!-- FAQ -->
+		<section class="panel" id="tab-faq" role="tabpanel" data-title="FAQ">
+			<div class="container faq">
+				<details open>
+					<summary>Is FiveOS free?</summary>
+					<p>Yes. FiveOS is open source under the MIT license. You can use, change and share it.</p>
+				</details>
+				<details>
+					<summary>Is FXServer included in the ISO?</summary>
+					<p>No. FXServer belongs to Cfx.re and is downloaded from the official servers during setup. This keeps FiveOS legal to distribute and always gives you a current build.</p>
+				</details>
+				<details>
+					<summary>Do I need a FiveM license key?</summary>
+					<p>Yes, every FiveM server needs one. Create it for free at <a href="https://portal.cfx.re" rel="noopener">portal.cfx.re</a>. You can enter it during installation or later with <code>sudo fiveos config license &lt;key&gt;</code>.</p>
+				</details>
+				<details>
+					<summary>Which hardware do I need?</summary>
+					<p>A 64-bit x86 machine (Intel/AMD) or VM with at least 2 CPU cores, 4 GB RAM and 30 GB disk. More players and resources need more RAM and CPU.</p>
+				</details>
+				<details>
+					<summary>Does it run on ARM, e.g. Oracle Cloud Ampere or a Raspberry Pi?</summary>
+					<p>No. FXServer is only available for x86_64, so FiveOS is too.</p>
+				</details>
+				<details>
+					<summary>Can I use ESX, QBCore or other frameworks?</summary>
+					<p>Yes. The database and oxmysql are already set up. Install your framework's resources with <code>fiveos resource add</code> or copy them to <code>/opt/fivem/server-data/resources</code> (for example via SFTP) and import their SQL files with phpMyAdmin.</p>
+				</details>
+				<details>
+					<summary>What about txAdmin?</summary>
+					<p>FiveOS runs FXServer directly with its own management command. Optional txAdmin support is planned.</p>
+				</details>
+				<details>
+					<summary>Is FiveOS affiliated with Cfx.re or Rockstar Games?</summary>
+					<p>No. FiveOS is an independent community project. By running a FiveM server you agree to the <a href="https://fivem.net/terms" rel="noopener">Cfx.re terms</a>.</p>
+				</details>
+			</div>
+		</section>
+	</main>
+
+	<aside class="sidebar">
+		<section class="box">
+			<h2 class="box-title">Download</h2>
+			<ul class="box-list">
+				<li><span>Version</span><span class="badge release-version">v0.1.0</span></li>
+				<li><span>Released</span><span class="badge" id="release-date">–</span></li>
+				<li><span>Size</span><span class="badge" id="release-size">–</span></li>
+				<li><span>Architecture</span><span class="badge">amd64</span></li>
+			</ul>
+			<a class="button primary full download-link" href="#installation" data-tab-link="installation"><svg class="icon"><use href="#i-download"/></svg><span class="download-label">Download ISO</span></a>
+		</section>
+
+		<section class="box">
+			<h2 class="box-title">What's inside</h2>
+			<ul class="box-list">
+				<li><span>Debian</span><span class="badge">13</span></li>
+				<li><span>FXServer</span><span class="badge">recommended</span></li>
+				<li><span>MariaDB</span><span class="badge">11.8</span></li>
+				<li><span>PHP</span><span class="badge">8.4</span></li>
+				<li><span>phpMyAdmin</span><span class="badge">5.2</span></li>
+				<li><span>oxmysql</span><span class="badge">latest</span></li>
+			</ul>
+		</section>
+
+		<section class="box">
+			<h2 class="box-title">Requirements</h2>
+			<ul class="box-list">
+				<li><span>CPU</span><span class="badge">2+ cores, x86_64</span></li>
+				<li><span>RAM</span><span class="badge">4 GB+</span></li>
+				<li><span>Disk</span><span class="badge">30 GB+</span></li>
+				<li><span>Internet</span><span class="badge">for setup</span></li>
+			</ul>
+		</section>
+
+		<section class="box">
+			<h2 class="box-title">Latest releases</h2>
+			<ul class="people" id="release-list"></ul>
+			<p class="muted small" id="release-empty">No public release yet &mdash; build the ISO yourself from the source code.</p>
+			<a class="box-more repo-releases" href="#" hidden>All releases</a>
+		</section>
+	</aside>
+</div>
+
+<footer class="footer">
+	<div class="wrap">
+		<span><b>FiveOS</b> &middot; open source under the MIT license</span>
+		<span>Not affiliated with Cfx.re, Rockstar Games or Take-Two Interactive.</span>
+	</div>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

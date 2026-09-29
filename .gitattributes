@@ -1,0 +1,5 @@
+# Shell scripts and configs must keep LF line endings, also on Windows.
+* text=auto eol=lf
+*.iso binary
+*.png binary
+*.webp binary

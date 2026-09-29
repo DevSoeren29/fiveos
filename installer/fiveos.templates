@@ -1,0 +1,66 @@
+Template: fiveos/intro
+Type: note
+Description: FiveOS - FiveM server setup
+ The next questions configure your FiveM server, MariaDB and phpMyAdmin.
+ Everything else is installed and configured automatically.
+ .
+ On the first boot FiveOS downloads the current recommended FXServer build
+ and finishes the setup, so the machine needs an internet connection.
+ .
+ A FiveM license key can be created at https://portal.cfx.re. You can leave
+ it empty now and add it later with: sudo fiveos config license <key>
+
+Template: fiveos/error
+Type: error
+Description: Invalid input
+ ${MESSAGE}
+
+Template: fiveos/server_name
+Type: string
+Default: My FiveOS Server
+Description: FiveM server name:
+ The name shown in the FiveM server list (sv_hostname).
+
+Template: fiveos/license_key
+Type: string
+Default:
+Description: FiveM license key (optional):
+ Your Cfx.re server license key (sv_licenseKey), e.g. cfxk_xxxxxxxx.
+ Leave empty to add it later. The server will not start without it.
+
+Template: fiveos/db_admin_user
+Type: string
+Default: admin
+Description: Database admin user:
+ A MariaDB user with full privileges. Use it to log in to phpMyAdmin.
+
+Template: fiveos/db_admin_password
+Type: password
+Description: Password for the database admin user:
+ At least 8 characters.
+
+Template: fiveos/db_admin_password_again
+Type: password
+Description: Repeat the password for the database admin user:
+
+Template: fiveos/db_name
+Type: string
+Default: fivem
+Description: Name of the FiveM database:
+ The database your server scripts (ESX, QBCore, oxmysql, ...) use.
+
+Template: fiveos/db_user
+Type: string
+Default: fivem
+Description: Database user for the FiveM server:
+ This user only has access to the FiveM database. FiveOS writes the matching
+ mysql_connection_string into the server configuration.
+
+Template: fiveos/db_password
+Type: password
+Description: Password for the FiveM database user:
+ At least 8 characters.
+
+Template: fiveos/db_password_again
+Type: password
+Description: Repeat the password for the FiveM database user:

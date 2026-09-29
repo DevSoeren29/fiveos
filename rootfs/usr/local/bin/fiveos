@@ -1,0 +1,446 @@
+#!/bin/bash
+# fiveos - manage the FiveM server, database and system of FiveOS.
+set -euo pipefail
+# shellcheck source=../lib/fiveos/lib.sh
+. /usr/local/lib/fiveos/lib.sh
+
+usage() {
+	cat <<EOF
+FiveOS $FIVEOS_VERSION - the FiveM server OS
+
+Usage: fiveos <command> [arguments]
+
+Server
+  status                      Show the state of FiveM, MariaDB and phpMyAdmin
+  start | stop | restart      Control the FiveM server
+  console                     Open the live server console (leave: Ctrl+B, then D)
+  logs [-f]                   Show the server log (-f: follow)
+  update [channel|url]        Install an FXServer build: recommended (default),
+                              latest, optional, critical or a fx.tar.xz URL
+  rollback                    Switch back to the previously installed build
+
+Configuration
+  config show                 Show the main server settings
+  config hostname <name>      Set the server name
+  config license <key>        Set the Cfx.re license key
+  config maxclients <n>       Set the player slots
+  resource list               List installed resources
+  resource add <url> [name]   Install a resource from a git repository or .zip URL
+  resource remove <name>      Remove a resource added with 'resource add'
+
+Database
+  db info                     Show database, users and connection details
+  db shell                    Open a MariaDB shell as root
+  db backup                   Dump the FiveM database to $BACKUP_DIR
+
+System
+  backup                      Back up server files and database to $BACKUP_DIR
+  firewall [status]           Show the firewall rules
+  firewall allow|deny <port>[/tcp|/udp]
+  setup                       Run (or retry) the initial setup
+  version                     Show the FiveOS version
+EOF
+}
+
+# --- status ---------------------------------------------------------------------
+
+svc_line() {
+	local state color
+	state=$(systemctl is-active "$2" 2>/dev/null || true)
+	case "$state" in
+	active) color=$C_G ;;
+	activating | reloading) color=$C_Y ;;
+	*) color=$C_R ;;
+	esac
+	printf '  %-18s %s%s%s\n' "$1" "$color" "${state:-unknown}" "$C_0"
+}
+
+cmd_status() {
+	local ip build
+	ip=$(primary_ip)
+	build=$(conf_get FXSERVER_BUILD)
+	svc_line "FiveM server" fivem
+	svc_line "MariaDB" mariadb
+	svc_line "Web/phpMyAdmin" apache2
+	echo
+	printf '  %-18s %s\n' "FXServer build" "${build:-not installed}"
+	printf '  %-18s %s\n' "IP address" "${ip:-unknown}"
+	printf '  %-18s %s\n' "Connect (F8)" "connect ${ip:-<ip>}:30120"
+	printf '  %-18s %s\n' "phpMyAdmin" "http://${ip:-<ip>}/phpmyadmin"
+	if [ "$(conf_get INSTALLED)" != 1 ]; then
+		echo
+		warn "The setup is not finished yet. Run: sudo fiveos setup"
+	elif license_missing; then
+		echo
+		warn "No license key set. Run: sudo fiveos config license <key>"
+	fi
+}
+
+# --- server control ---------------------------------------------------------------
+
+cmd_start() {
+	require_root start
+	license_missing && die "No license key set. Run: sudo fiveos config license <key>"
+	systemctl start fivem
+	info "FiveM server started. Watch it with: fiveos logs -f"
+}
+
+cmd_stop() {
+	require_root stop
+	systemctl stop fivem
+	info "FiveM server stopped."
+}
+
+cmd_restart() {
+	require_root restart
+	license_missing && die "No license key set. Run: sudo fiveos config license <key>"
+	systemctl restart fivem
+	info "FiveM server restarted."
+}
+
+cmd_console() {
+	require_root console
+	fx_running || die "The FiveM server is not running. Start it with: sudo fiveos start"
+	info "Attaching to the server console. Leave with Ctrl+B, then D."
+	info "Typing 'quit' restarts the server; use 'fiveos stop' to stop it."
+	sleep 1
+	exec runuser -u "$FIVEM_USER" -- tmux -L "$TMUX_SOCKET" attach -t fivem
+}
+
+cmd_logs() {
+	local log="$LOG_DIR/fxserver.log"
+	[ -r "$log" ] || die "No log yet ($log)."
+	if [ "${1:-}" = "-f" ]; then
+		exec tail -n 100 -f "$log"
+	fi
+	tail -n 200 "$log"
+}
+
+cmd_update() {
+	require_root update
+	local was_running=0
+	fx_running && was_running=1
+	install_artifacts "${1:-recommended}"
+	if [ "$was_running" = 1 ]; then
+		systemctl restart fivem
+		info "FiveM server restarted with the new build."
+	fi
+}
+
+cmd_rollback() {
+	require_root rollback
+	[ -d "$ART_DIR.old" ] || die "No previous build available."
+	local tmp="$ART_DIR.swap" was_running=0
+	fx_running && was_running=1
+	[ "$was_running" = 1 ] && systemctl stop fivem
+	mv "$ART_DIR" "$tmp"
+	mv "$ART_DIR.old" "$ART_DIR"
+	mv "$tmp" "$ART_DIR.old"
+	conf_set FXSERVER_BUILD "$(cat "$ART_DIR/.fiveos-build" 2>/dev/null || echo unknown)"
+	[ "$was_running" = 1 ] && systemctl start fivem
+	info "Switched to FXServer build $(conf_get FXSERVER_BUILD)."
+}
+
+# --- configuration -------------------------------------------------------------------
+
+need_server_cfg() { [ -f "$SERVER_CFG" ] || die "$SERVER_CFG not found. Is the setup finished?"; }
+
+restart_hint() { fx_running && info "Restart the server to apply: sudo fiveos restart" || true; }
+
+cmd_config() {
+	local sub=${1:-show}
+	shift || true
+	case "$sub" in
+	show)
+		need_server_cfg
+		grep -E '^(sv_hostname|sv_maxclients|sets locale|set onesync|endpoint_add)' "$SERVER_CFG" | sed 's/^/  /'
+		if [ -r "$SECRETS_CFG" ]; then
+			license_missing && echo "  sv_licenseKey (not set)" || echo "  sv_licenseKey (set)"
+		fi
+		;;
+	hostname)
+		require_root config
+		need_server_cfg
+		local name
+		name=$(cfg_str "$*")
+		[ -n "$name" ] || die "Usage: fiveos config hostname <name>"
+		cfg_set "$SERVER_CFG" 'sv_hostname ' "sv_hostname \"$name\""
+		cfg_set "$SERVER_CFG" 'sets sv_projectName ' "sets sv_projectName \"$name\""
+		info "Server name set to: $name"
+		restart_hint
+		;;
+	license)
+		require_root config
+		local key=${1:-}
+		[[ $key =~ ^[A-Za-z0-9_]+$ ]] || die "Usage: fiveos config license <key> (get one at https://portal.cfx.re)"
+		[ -f "$SECRETS_CFG" ] || die "$SECRETS_CFG not found. Is the setup finished?"
+		cfg_set "$SECRETS_CFG" 'sv_licenseKey ' "sv_licenseKey \"$key\""
+		info "License key saved."
+		if fx_running; then
+			restart_hint
+		else
+			info "Start the server with: sudo fiveos start"
+		fi
+		;;
+	maxclients)
+		require_root config
+		need_server_cfg
+		local n=${1:-}
+		[[ $n =~ ^[0-9]+$ ]] && [ "$n" -ge 1 ] && [ "$n" -le 2048 ] || die "Usage: fiveos config maxclients <1-2048>"
+		cfg_set "$SERVER_CFG" 'sv_maxclients ' "sv_maxclients $n"
+		info "Player slots set to $n."
+		restart_hint
+		;;
+	*) die "Unknown config command '$sub'. See: fiveos help" ;;
+	esac
+}
+
+cmd_resource() {
+	local sub=${1:-list}
+	shift || true
+	case "$sub" in
+	list)
+		need_server_cfg
+		local manifest dir name state
+		while IFS= read -r manifest; do
+			dir=$(dirname "$manifest")
+			name=$(basename "$dir")
+			state="-"
+			grep -qx "ensure $name" "$SERVER_CFG" && state="ensured"
+			printf '  %-28s %-8s %s\n' "$name" "$state" "${dir#"$DATA_DIR"/}"
+		done < <(find "$DATA_DIR/resources" \( -name fxmanifest.lua -o -name __resource.lua \) -not -path '*/node_modules/*' | sort)
+		;;
+	add)
+		require_root resource
+		need_server_cfg
+		local url=${1:-} name=${2:-} target tmp
+		[ -n "$url" ] || die "Usage: fiveos resource add <git-url|zip-url> [name]"
+		[ -n "$name" ] || name=$(basename "${url%/}" .git)
+		name=${name%.zip}
+		[[ $name =~ ^[A-Za-z0-9_.-]+$ ]] || die "Invalid resource name '$name'. Pass a name: fiveos resource add <url> <name>"
+		target="$RES_DIR/$name"
+		[ -e "$target" ] && die "Resource '$name' already exists."
+		mkdir -p "$RES_DIR"
+		if [[ $url == *.zip ]]; then
+			tmp=$(mktemp -d "$FIVEM_HOME/.res.XXXXXX")
+			curl -fL --retry 3 -o "$tmp/res.zip" "$url" || { rm -rf "$tmp"; die "Download failed."; }
+			unzip -q "$tmp/res.zip" -d "$tmp/x" || { rm -rf "$tmp"; die "Not a valid zip file."; }
+			# zips often contain a single top level folder
+			local src="$tmp/x"
+			if [ "$(find "$tmp/x" -mindepth 1 -maxdepth 1 | wc -l)" = 1 ] && [ -d "$(find "$tmp/x" -mindepth 1 -maxdepth 1)" ]; then
+				src=$(find "$tmp/x" -mindepth 1 -maxdepth 1)
+			fi
+			mv "$src" "$target"
+			rm -rf "$tmp"
+		else
+			git clone --depth 1 "$url" "$target" || die "git clone failed."
+		fi
+		chown -R "$FIVEM_USER:$FIVEM_USER" "$target"
+		chmod -R g+w "$target"
+		[ -f "$target/fxmanifest.lua" ] || [ -f "$target/__resource.lua" ] ||
+			warn "No fxmanifest.lua found in $target - check the folder structure."
+		grep -qx "ensure $name" "$SERVER_CFG" || echo "ensure $name" >> "$SERVER_CFG"
+		info "Resource '$name' installed and added to server.cfg."
+		restart_hint
+		;;
+	remove)
+		require_root resource
+		need_server_cfg
+		local name=${1:-} tmp
+		[[ $name =~ ^[A-Za-z0-9_.-]+$ ]] || die "Usage: fiveos resource remove <name>"
+		[ -d "$RES_DIR/$name" ] || die "'$name' is not in $RES_DIR (only resources added with 'fiveos resource add' can be removed)."
+		rm -rf "${RES_DIR:?}/$name"
+		tmp=$(mktemp)
+		grep -vx "ensure $name" "$SERVER_CFG" > "$tmp" || true
+		cat "$tmp" > "$SERVER_CFG"
+		rm -f "$tmp"
+		info "Resource '$name' removed."
+		restart_hint
+		;;
+	*) die "Unknown resource command '$sub'. See: fiveos help" ;;
+	esac
+}
+
+# --- database ---------------------------------------------------------------------
+
+db_dump() { # db_dump FILE.sql.gz
+	local db
+	db=$(conf_get DB_NAME)
+	[ -n "$db" ] || die "No FiveM database configured."
+	mariadb-dump --single-transaction --routines --triggers --databases "$db" | gzip > "$1"
+	chmod 600 "$1"
+}
+
+cmd_db() {
+	local sub=${1:-info}
+	case "$sub" in
+	info)
+		local ip
+		ip=$(primary_ip)
+		printf '  %-18s %s\n' "Database" "$(conf_get DB_NAME)"
+		printf '  %-18s %s\n' "FiveM user" "$(conf_get DB_USER)"
+		printf '  %-18s %s\n' "Admin user" "$(conf_get DB_ADMIN_USER)"
+		printf '  %-18s %s\n' "Host" "localhost:3306 (only reachable from this machine)"
+		printf '  %-18s %s\n' "phpMyAdmin" "http://${ip:-<ip>}/phpmyadmin"
+		printf '  %-18s %s\n' "Connection" "mysql://$(conf_get DB_USER):*****@localhost/$(conf_get DB_NAME)?charset=utf8mb4"
+		;;
+	shell)
+		require_root db
+		exec mariadb
+		;;
+	backup)
+		require_root db
+		install -d -m 700 "$BACKUP_DIR"
+		local file
+		file="$BACKUP_DIR/db-$(conf_get DB_NAME)-$(date +%Y%m%d-%H%M%S).sql.gz"
+		db_dump "$file"
+		info "Database backup written to $file ($(du -h "$file" | cut -f1))"
+		;;
+	*) die "Unknown db command '$sub'. See: fiveos help" ;;
+	esac
+}
+
+# --- system -------------------------------------------------------------------------
+
+cmd_backup() {
+	require_root backup
+	install -d -m 700 "$BACKUP_DIR"
+	local ts tmp file
+	ts=$(date +%Y%m%d-%H%M%S)
+	file="$BACKUP_DIR/fiveos-$ts.tar.gz"
+	tmp=$(mktemp -d "$FIVEM_HOME/.backup.XXXXXX")
+	info "Dumping the database"
+	db_dump "$tmp/database.sql.gz"
+	info "Packing server files"
+	tar -czf "$file" --exclude='server-data/cache' \
+		-C "$FIVEM_HOME" server-data \
+		-C "$tmp" database.sql.gz
+	rm -rf "$tmp"
+	chmod 600 "$file"
+	info "Backup written to $file ($(du -h "$file" | cut -f1))"
+}
+
+cmd_firewall() {
+	require_root firewall
+	local sub=${1:-status} port=${2:-}
+	case "$sub" in
+	status) ufw status verbose ;;
+	allow | deny)
+		[[ $port =~ ^[0-9]{1,5}(/(tcp|udp))?$ ]] || die "Usage: fiveos firewall $sub <port>[/tcp|/udp]"
+		ufw "$sub" "$port"
+		;;
+	*) die "Unknown firewall command '$sub'. See: fiveos help" ;;
+	esac
+}
+
+# --- setup wizard (used when the installer answers are missing) ---------------------------
+
+wt() { whiptail --title "FiveOS setup" "$@" 3>&1 1>&2 2>&3; }
+
+wiz_name() { # wiz_name TEXT DEFAULT RESERVED...
+	local text=$1 def=$2 v r
+	shift 2
+	while :; do
+		v=$(wt --inputbox "$text" 10 70 "$def") || die "Setup cancelled."
+		if ! valid_name "$v"; then
+			wt --msgbox "Please use only letters, digits and underscores (1 to 32 characters)." 8 70
+			continue
+		fi
+		for r in "$@"; do
+			if [ "$v" = "$r" ]; then
+				wt --msgbox "'$v' is reserved or already used." 8 70
+				continue 2
+			fi
+		done
+		printf '%s' "$v"
+		return
+	done
+}
+
+wiz_password() { # wiz_password TEXT
+	local a b
+	while :; do
+		a=$(wt --passwordbox "$1 (at least 8 characters)" 10 70) || die "Setup cancelled."
+		b=$(wt --passwordbox "Repeat: $1" 10 70) || die "Setup cancelled."
+		if [ "$a" != "$b" ]; then
+			wt --msgbox "The passwords do not match." 8 70
+		elif [ ${#a} -lt 8 ]; then
+			wt --msgbox "The password must be at least 8 characters long." 8 70
+		else
+			printf '%s' "$a"
+			return
+		fi
+	done
+}
+
+setup_wizard() {
+	local server_name license admin admin_pw db_name db_user db_pw
+	while :; do
+		server_name=$(wt --inputbox "FiveM server name:" 10 70 "My FiveOS Server") || die "Setup cancelled."
+		server_name=$(cfg_str "$server_name")
+		[ -n "$server_name" ] && break
+	done
+	while :; do
+		license=$(wt --inputbox "FiveM license key from https://portal.cfx.re (optional):" 10 70) || die "Setup cancelled."
+		[[ $license =~ ^[A-Za-z0-9_]*$ ]] && break
+		wt --msgbox "The license key may only contain letters, digits and underscores." 8 70
+	done
+	admin=$(wiz_name "Database admin user (for phpMyAdmin):" admin root mysql phpmyadmin mariadb.sys)
+	admin_pw=$(wiz_password "Password for database user '$admin'")
+	db_name=$(wiz_name "Name of the FiveM database:" fivem mysql information_schema performance_schema sys phpmyadmin)
+	db_user=$(wiz_name "Database user for the FiveM server:" fivem root mysql phpmyadmin mariadb.sys "$admin")
+	db_pw=$(wiz_password "Password for database user '$db_user'")
+
+	install -d -m 700 "$INSTALL_DIR"
+	printf '%s' "$server_name" > "$INSTALL_DIR/server_name"
+	printf '%s' "$license" > "$INSTALL_DIR/license_key"
+	printf '%s' "$admin" > "$INSTALL_DIR/db_admin_user"
+	printf '%s' "$admin_pw" > "$INSTALL_DIR/db_admin_password"
+	printf '%s' "$db_name" > "$INSTALL_DIR/db_name"
+	printf '%s' "$db_user" > "$INSTALL_DIR/db_user"
+	printf '%s' "$db_pw" > "$INSTALL_DIR/db_password"
+	chmod 600 "$INSTALL_DIR"/*
+}
+
+install_data_complete() {
+	local f
+	for f in server_name db_admin_user db_admin_password db_name db_user db_password; do
+		[ -s "$INSTALL_DIR/$f" ] || return 1
+	done
+}
+
+cmd_setup() {
+	require_root setup
+	if [ "$(conf_get INSTALLED)" = 1 ] && [ ! -d "$INSTALL_DIR" ]; then
+		die "FiveOS is already set up. See: fiveos status"
+	fi
+	install_data_complete || setup_wizard
+	exec /usr/local/lib/fiveos/firstboot.sh
+}
+
+# --- main -----------------------------------------------------------------------------
+
+cmd=${1:-help}
+shift || true
+case "$cmd" in
+status) cmd_status ;;
+start) cmd_start ;;
+stop) cmd_stop ;;
+restart) cmd_restart ;;
+console) cmd_console ;;
+logs | log) cmd_logs "$@" ;;
+update) cmd_update "$@" ;;
+rollback) cmd_rollback ;;
+config) cmd_config "$@" ;;
+resource | resources) cmd_resource "$@" ;;
+db) cmd_db "$@" ;;
+backup) cmd_backup ;;
+firewall | fw) cmd_firewall "$@" ;;
+setup) cmd_setup ;;
+version | --version | -v) echo "FiveOS $FIVEOS_VERSION" ;;
+help | --help | -h) usage ;;
+*)
+	usage >&2
+	exit 1
+	;;
+esac

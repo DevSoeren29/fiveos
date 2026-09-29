@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FiveOS Server</title>
+<meta name="description" content="FiveM server powered by FiveOS">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+	<symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></symbol>
+	<symbol id="i-tag" viewBox="0 0 24 24"><path fill="currentColor" d="M3 4v6.6c0 .5.2 1 .6 1.4l8.4 8.4a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8L13 2.6A2 2 0 0 0 11.6 2H5a2 2 0 0 0-2 2zm4.5 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></symbol>
+	<symbol id="i-sort" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M3 16l4 4 4-4M13 6h8M13 11h6M13 16h4"/></symbol>
+	<symbol id="i-signal" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17h3v4H3zM9.5 12h3v9h-3zM16 6h3v15h-3z"/></symbol>
+	<symbol id="i-copy" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M9 9h11v11H9zM5 15H4V4h11v1"/></symbol>
+	<symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+	<symbol id="i-users" viewBox="0 0 24 24"><path fill="currentColor" d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm17.5 1v-1c0-1.9-.8-3.6-2.1-4.9 3.4.2 6.6 2 6.6 4.9v1z"/></symbol>
+</svg>
+
+<header class="topbar">
+	<div class="wrap topbar-inner">
+		<nav class="menu" aria-label="Main">
+			<a class="menu-logo" href="/"><img src="assets/mark-dark.png" alt="" width="28" height="28"><span>Five<b>OS</b></span></a>
+			<a class="menu-item active" href="#overview" data-tab-link="overview">Overview</a>
+			<a class="menu-item" href="#players" data-tab-link="players">Players</a>
+			<a class="menu-item" href="#commands" data-tab-link="commands">Commands</a>
+			<a class="menu-item" href="/phpmyadmin/">phpMyAdmin</a>
+		</nav>
+		<div class="menu-right">
+			<span id="status-pill" class="status"><span class="dot"></span><span id="status-text">Checking…</span></span>
+		</div>
+	</div>
+</header>
+
+<div class="breadcrumbs">
+	<div class="wrap">
+		<a href="/">FiveOS</a><span class="sep">/</span><span>Server</span>
+	</div>
+</div>
+
+<div class="wrap layout">
+	<main class="content">
+
+		<div class="page-header">
+			<h1 id="server-name">FiveM Server</h1>
+			<a id="connect-link" class="button primary" href="#"><svg class="icon"><use href="#i-play"/></svg>Connect now</a>
+		</div>
+
+		<div class="tabs" role="tablist">
+			<button class="tab active" type="button" role="tab" data-tab="overview">Overview</button>
+			<button class="tab" type="button" role="tab" data-tab="players">Players <span class="tab-count" id="players-count">0</span></button>
+			<button class="tab" type="button" role="tab" data-tab="commands">Commands</button>
+		</div>
+
+		<!-- Overview -->
+		<section class="panel active" id="tab-overview" role="tabpanel">
+			<div class="container">
+				<div class="entries">
+					<article class="entry">
+						<div class="entry-body">
+							<div class="entry-category">Getting started</div>
+							<h2 class="entry-title">How to join the server</h2>
+							<p class="entry-text">Start FiveM, press <kbd>F8</kbd> and enter <code id="connect-cmd-2">connect …:30120</code>, or use the <b>Connect now</b> button.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>FiveM</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>F8</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>connect</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Server guide</small></div></div>
+							<a class="meta" href="https://fivem.net" rel="noopener">Get FiveM <svg class="icon"><use href="#i-arrow"/></svg></a>
+						</div>
+					</article>
+
+					<a class="entry" href="/phpmyadmin/">
+						<div class="entry-body">
+							<div class="entry-category">Database</div>
+							<h2 class="entry-title">phpMyAdmin</h2>
+							<p class="entry-text">Manage the FiveM database in the browser. Log in with the database admin user from the installation.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>MariaDB</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>oxmysql</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>utf8mb4</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Admin tools</small></div></div>
+							<span class="meta">Open <svg class="icon"><use href="#i-arrow"/></svg></span>
+						</div>
+					</a>
+
+					<a class="entry" href="#commands" data-tab-link="commands">
+						<div class="entry-body">
+							<div class="entry-category">Administration</div>
+							<h2 class="entry-title">Terminal &amp; fiveos command</h2>
+							<p class="entry-text">Log in via SSH or on the console. One command controls the server, updates, resources and backups.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>SSH</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>CLI</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Backups</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>Admin tools</small></div></div>
+							<span class="meta">Commands <svg class="icon"><use href="#i-arrow"/></svg></span>
+						</div>
+					</a>
+
+					<article class="entry">
+						<div class="entry-body">
+							<div class="entry-category">Security</div>
+							<h2 class="entry-title">Secured by default</h2>
+							<p class="entry-text">The firewall only allows SSH, web and FiveM. The database is only reachable from the server itself.</p>
+							<div class="tags"><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Firewall</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>ufw</span><span class="tag"><svg class="icon"><use href="#i-tag"/></svg>Local DB</span></div>
+						</div>
+						<div class="entry-footer">
+							<div class="author"><img class="avatar logo-avatar" src="assets/mark-dark.png" alt=""><div><b>FiveOS</b><small>System</small></div></div>
+							<span class="meta">Ports 22, 80, 30120</span>
+						</div>
+					</article>
+				</div>
+			</div>
+		</section>
+
+		<!-- Players -->
+		<section class="panel" id="tab-players" role="tabpanel">
+			<div class="container">
+				<div class="container-toolbar">
+					<span class="muted small">Updates automatically every 15 seconds.</span>
+					<button class="button small" type="button" id="sort-btn"><svg class="icon"><use href="#i-sort"/></svg><span>Sort: ID</span></button>
+				</div>
+				<div class="entries" id="player-grid"></div>
+				<div class="empty" id="player-empty">No players online.</div>
+			</div>
+		</section>
+
+		<!-- Commands -->
+		<section class="panel" id="tab-commands" role="tabpanel">
+			<div class="container">
+				<div class="container-toolbar">
+					<span class="muted small">Run these on the server. Commands with <code>sudo</code> need your Linux password.</span>
+				</div>
+				<ul class="cmd-list">
+					<li><code>fiveos status</code><span class="desc">Server overview</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos console</code><span class="desc">Live server console</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>fiveos logs -f</code><span class="desc">Follow the server log</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos restart</code><span class="desc">Restart the server</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos resource add &lt;git-url&gt;</code><span class="desc">Install a resource</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos update</code><span class="desc">Install a new FXServer build</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>sudo fiveos backup</code><span class="desc">Back up files and database</span><button class="button small copy-btn" type="button">Copy</button></li>
+					<li><code>fiveos help</code><span class="desc">All commands</span><button class="button small copy-btn" type="button">Copy</button></li>
+				</ul>
+			</div>
+		</section>
+	</main>
+
+	<aside class="sidebar">
+		<section class="box">
+			<h2 class="box-title">Server status</h2>
+			<ul class="box-list">
+				<li><span>Players</span><span class="badge"><span id="stat-players">–</span><span id="stat-max"></span></span></li>
+				<li class="bar-row"><div class="bar"><span id="stat-bar"></span></div></li>
+				<li><span>Resources</span><span class="badge" id="stat-resources">–</span></li>
+				<li><span>FXServer build</span><span class="badge" id="stat-build">–</span></li>
+				<li><span>OneSync</span><span class="badge" id="stat-onesync">–</span></li>
+			</ul>
+		</section>
+
+		<section class="box">
+			<h2 class="box-title">Connect</h2>
+			<div class="connect-field"><code id="connect-cmd">connect …:30120</code></div>
+			<button class="button full copy-btn" type="button" data-copy-from="connect-cmd"><svg class="icon"><use href="#i-copy"/></svg><span>Copy</span></button>
+		</section>
+
+		<section class="box">
+			<h2 class="box-title">Online players</h2>
+			<ul class="people" id="sidebar-players"></ul>
+			<p class="muted small" id="sidebar-empty">Nobody online right now.</p>
+			<a class="box-more" href="#players" data-tab-link="players">All players</a>
+		</section>
+	</aside>
+</div>
+
+<footer class="footer">
+	<div class="wrap">
+		<span>Powered by <b>FiveOS</b> <span id="fiveos-version"></span></span>
+		<span>Not affiliated with Cfx.re or Rockstar Games.</span>
+	</div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
