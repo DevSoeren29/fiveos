@@ -107,7 +107,7 @@ xorriso -indev "$ISO" -outdev "$OUT_ISO" \
 }
 
 log "Checking the boot records"
-python3 "$ROOT/build/check-iso.py" "$OUT_ISO" || fail "The ISO would not boot, see above."
+python3 "$ROOT/build/check-iso.py" --fix "$OUT_ISO" || fail "The ISO would not boot, see above."
 
 (cd "$OUT" && sha256sum "$(basename "$OUT_ISO")" > "$(basename "$OUT_ISO").sha256")
 log "Done: $OUT_ISO ($(du -h "$OUT_ISO" | cut -f1))"
