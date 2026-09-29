@@ -101,10 +101,16 @@ xorriso -indev "$ISO" -outdev "$OUT_ISO" \
 	-map "$WORK/rootfs" /fiveos/rootfs \
 	-map "$ROOT/VERSION" /fiveos/VERSION \
 	-map "$WORK/md5sum.txt" /md5sum.txt \
-	-boot_image any replay 2> "$WORK/xorriso.log" || {
+	-boot_image any replay \
+	-boot_image isolinux patch=on 2> "$WORK/xorriso.log" || {
 	cat "$WORK/xorriso.log" >&2
 	fail "xorriso failed."
 }
+# "patch=on" rewrites the boot info table of isolinux.bin. Without it ISOLINUX
+# stops with "Image checksum error" on BIOS boot, because isolinux.bin moved.
+
+log "Boot configuration of the new ISO:"
+xorriso -indev "$OUT_ISO" -report_el_torito as_mkisofs 2> /dev/null | sed 's/^/    /'
 
 (cd "$OUT" && sha256sum "$(basename "$OUT_ISO")" > "$(basename "$OUT_ISO").sha256")
 log "Done: $OUT_ISO ($(du -h "$OUT_ISO" | cut -f1))"
