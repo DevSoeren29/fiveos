@@ -1,7 +1,7 @@
 #!/bin/bash
 # fiveos - manage the FiveM server, database and system of FiveOS.
 set -euo pipefail
-# shellcheck source=../lib/fiveos/lib.sh
+# shellcheck source=rootfs/usr/local/lib/fiveos/lib.sh
 . /usr/local/lib/fiveos/lib.sh
 
 usage() {

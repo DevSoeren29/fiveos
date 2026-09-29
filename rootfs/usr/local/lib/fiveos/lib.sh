@@ -1,5 +1,6 @@
-# shellcheck shell=bash
+# shellcheck shell=bash disable=SC2034
 # Shared helpers for the FiveOS scripts (fiveos CLI and first boot setup).
+# (SC2034: the settings below are used by the scripts that source this file.)
 
 FIVEOS_VERSION="0.1.0"
 

@@ -3,7 +3,7 @@
 # firewall with the answers from the installer (or from 'fiveos setup'),
 # stored in /etc/fiveos/install. Safe to run again after a failure.
 set -euo pipefail
-# shellcheck source=lib.sh
+# shellcheck source=rootfs/usr/local/lib/fiveos/lib.sh
 . /usr/local/lib/fiveos/lib.sh
 
 [ "$(id -u)" -eq 0 ] || die "The setup must run as root."

@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2154 # $RET is set by the debconf db_get/db_input functions
 # FiveOS installer, runs as preseed/early_command (busybox sh inside the
 # Debian installer). Asks the FiveOS questions up front, so the rest of the
 # installation can run unattended. The answers stay in the installer's
