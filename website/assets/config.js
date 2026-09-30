@@ -11,6 +11,6 @@
 window.FIVEOS_CONFIG = {
 	repo: '',
 	version: '0.1.0',
-	downloadsPaused: false,
-	pausedMessage: 'Downloads are paused while we fix a few bugs. Please check back soon.'
+	downloadsPaused: true,
+	pausedMessage: 'Downloads are paused while we build the OS. Please check back soon.'
 };
