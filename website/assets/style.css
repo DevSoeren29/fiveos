@@ -463,6 +463,23 @@ a.meta { color: var(--link); }
 .menu-download:hover { background: #1f3d5c; text-decoration: none; }
 
 .button.disabled { opacity: 0.55; pointer-events: none; }
+.menu-download.disabled { opacity: 0.6; pointer-events: none; }
+
+/* notice box (e.g. downloads paused) */
+.notice {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px 16px;
+	margin-bottom: 22px;
+	border-radius: 4px;
+	border-left: 4px solid;
+}
+.notice .icon { margin-top: 3px; }
+.notice.warning { color: #6b4e00; background: #fff4d1; border-color: #e6a800; }
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) .notice.warning { color: #ffe08a; background: #3a3014; border-color: #c99400; }
+}
 .meta.link { color: var(--link); }
 
 /* logo variants follow the color scheme */

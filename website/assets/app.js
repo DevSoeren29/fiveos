@@ -75,6 +75,22 @@
 		});
 	}
 
+	// config.downloadsPaused: no ISO links anywhere, notice at the top
+	function pauseDownloads() {
+		var notice = $('download-notice');
+		notice.querySelector('span').textContent = config.pausedMessage || 'Downloads are paused.';
+		notice.hidden = false;
+		all('a.download-link').forEach(function (a) {
+			a.removeAttribute('href');
+			a.removeAttribute('data-tab-link');
+			a.classList.add('disabled');
+			a.setAttribute('aria-disabled', 'true');
+			var label = a.querySelector('.download-label') || a.querySelector('span');
+			if (label) label.textContent = 'Download paused';
+		});
+		all('.checksum-link').forEach(function (a) { a.hidden = true; });
+	}
+
 	function showRepoLinks(repo) {
 		var url = 'https://github.com/' + repo;
 		all('.repo-link').forEach(function (a) {
@@ -97,8 +113,9 @@
 			img.src = 'assets/mark-dark.png';
 			img.alt = '';
 			var info = document.createElement('div');
-			var a = document.createElement('a');
-			a.href = r.html_url;
+			// while paused, no links to the release pages (they offer the ISO)
+			var a = document.createElement(config.downloadsPaused ? 'b' : 'a');
+			if (!config.downloadsPaused) a.href = r.html_url;
 			a.textContent = 'FiveOS ' + r.tag_name;
 			var small = document.createElement('small');
 			small.textContent = formatDate(r.published_at) + (r.prerelease ? ' · pre-release' : '');
@@ -114,8 +131,9 @@
 		var sum = (release.assets || []).filter(function (a) { return /\.iso\.sha256$/.test(a.name); })[0];
 		setVersion(release.tag_name);
 		$('release-date').textContent = formatDate(release.published_at);
+		if (iso) $('release-size').textContent = formatSize(iso.size);
+		if (config.downloadsPaused) return;
 		if (iso) {
-			$('release-size').textContent = formatSize(iso.size);
 			all('a.download-link').forEach(function (a) {
 				a.href = iso.browser_download_url;
 				a.removeAttribute('data-tab-link');
@@ -132,8 +150,9 @@
 	function loadReleases() {
 		var repo = detectRepo();
 		if (config.version) setVersion(config.version);
+		if (config.downloadsPaused) pauseDownloads();
 		if (!repo) {
-			noRelease('');
+			if (!config.downloadsPaused) noRelease('');
 			return;
 		}
 		showRepoLinks(repo);
@@ -147,9 +166,11 @@
 				renderReleases(repo, releases);
 				var stable = releases.filter(function (r) { return !r.prerelease; })[0] || releases[0];
 				if (stable) applyLatest(stable);
-				else noRelease(repo);
+				else if (!config.downloadsPaused) noRelease(repo);
 			})
-			.catch(function () { noRelease(repo); });
+			.catch(function () {
+				if (!config.downloadsPaused) noRelease(repo);
+			});
 	}
 
 	// --- copy buttons -------------------------------------------------------

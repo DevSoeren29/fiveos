@@ -1,7 +1,10 @@
 [Unit]
 Description=FiveM server (FXServer), managed by FiveOS
-After=network-online.target mariadb.service
+After=network-online.target mariadb.service fiveos-firstboot.service
 Wants=network-online.target mariadb.service
+# only start once the first boot setup has installed FXServer
+ConditionPathExists=/opt/fivem/artifacts/run.sh
+ConditionPathExists=/opt/fivem/server-data/server.cfg
 
 [Service]
 # FXServer runs inside tmux so 'fiveos console' can attach to its console.

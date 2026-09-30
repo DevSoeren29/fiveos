@@ -67,7 +67,8 @@ sql_esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g"; }
 # for values inside "..." in server.cfg
 cfg_str() { printf '%s' "$1" | tr -d '"\\\n'; }
 uri_enc() { jq -rn --arg v "$1" '$v|@uri'; }
-random_pw() { tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32; }
+# fixed input size: no reader closes the pipe early (SIGPIPE breaks set -o pipefail)
+random_pw() { head -c 24 /dev/urandom | base64 | tr -d '/+=\n'; }
 
 # cfg_set FILE PREFIX LINE
 # Replaces the first line starting with PREFIX (e.g. 'sv_hostname ') by LINE,

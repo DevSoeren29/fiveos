@@ -1,0 +1,4 @@
+# On the first boot systemd applies presets to all units (Debian: enable all).
+# fivem.service must stay off until fiveos-firstboot.service has set it up.
+enable fiveos-firstboot.service
+disable fivem.service

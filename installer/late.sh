@@ -33,6 +33,7 @@ chmod 644 \
 	"$T/usr/local/lib/fiveos/lib.sh" \
 	"$T/etc/systemd/system/fiveos-firstboot.service" \
 	"$T/etc/systemd/system/fivem.service" \
+	"$T/etc/systemd/system-preset/80-fiveos.preset" \
 	"$T/etc/logrotate.d/fiveos" \
 	"$T/etc/issue"
 # landing page (replaces Apache's default index.html)
